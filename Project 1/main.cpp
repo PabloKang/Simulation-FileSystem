@@ -24,7 +24,7 @@ int main() {
 	int i = 0;
 	cin >> i;
 
-	// Hello world.
+	// Hello world. How's it going?
 
 	return 0;
 }
