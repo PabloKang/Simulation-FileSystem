@@ -17,8 +17,9 @@ int main() {
 	// CURRENT MAIN() CODE IS FOR TESTING PURPOSES ONLY
 	FileSystem53 testFile(0,0,"");
 
-	testFile.restore();
 	testFile.save();
+	testFile.restore();
+
 
 	int i = 0;
 	cin >> i;

@@ -19,9 +19,10 @@ using namespace std;
 *   2. Format it if not done.
 */
 FileSystem53::FileSystem53(int l, int b, string storage) {
-	FILE_SIZE_FIELD		= 1;		// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
-	FILE_BLOCKS_FIELD	= 3;		// The maximum amount of blocks a file can be separated into.
-	FILE_DESCR_SIZE		= FILE_SIZE_FIELD + FILE_BLOCKS_FIELD;
+	FILE_SIZE_FIELD		= 4;		// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
+	FILE_INDEX_FIELD	= 4;
+	FILE_BLOCKS_MAX		= 3;		// The maximum amount of blocks a file can be separated into.
+	FILE_DESCR_SIZE		= FILE_SIZE_FIELD + (FILE_INDEX_FIELD * FILE_BLOCKS_MAX);
 	MAX_FILE_NO			= 14;		// Maximum number of files which can be stored by this file system.
 	MAX_BLOCK_NO		= 64;		// Maximum number of blocks which can be supported by this file system.
 	MAX_BLOCK_NO_DIV8	= MAX_BLOCK_NO / 8;
@@ -492,8 +493,8 @@ void FileSystem53::directory() {
   Restores the saved disk image in a file to the array.
   */
 void FileSystem53::restore() {
-	std::ifstream inFile("ldiskISOTest.txt");
-	char nextChar;
+	std::ifstream inFile("ldiskISO.txt");
+	char nextChar = ' ';
 
 	// For all blocks...
 	for (int i = 0; i < MAX_BLOCK_NO; i++)
