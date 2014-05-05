@@ -15,16 +15,14 @@ using namespace std;
 
 int main() {
 	// CURRENT MAIN() CODE IS FOR TESTING PURPOSES ONLY
-	FileSystem53 testFile(0,0,"");
+	FileSystem53 testFS(0,0,"");
+	testFS.format();
+	testFS.save();
+	testFS.restore();
 
-	testFile.save();
-	testFile.restore();
-
-
+	// Holds the console open unil user input.
 	int i = 0;
 	cin >> i;
-
-	// Hello world. How's it going?
 
 	return 0;
 }

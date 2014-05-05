@@ -147,7 +147,25 @@ void FileSystem53::deallocate_oft(int index) {
  *   none
  */
 void FileSystem53::format() {
+	int arraySize = 0;	// Size of b block.
 
+	for (int i = 0; i < K; i++) {
+		// Determine size of temporary block
+		if (i == 0)
+			arraySize = MAX_BLOCK_NO;
+		else if (i > 0 && i < K)
+			arraySize = FILE_DESCR_SIZE * F;
+
+		char* b = new char[arraySize];
+
+		// Fill temporary block
+		for (int j = 0; j < arraySize; j++)
+			b[j] = '0';
+		
+		// Write to ldisk
+		write_block(i, b);
+		delete[] b;
+	}
 }
 
 

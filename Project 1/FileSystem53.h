@@ -37,7 +37,7 @@ class FileSystem53 {
 	int FILE_SIZE_FIELD;    // Size of file size field in bytes. Maximum file size allowed in this file system is 192.
 	int FILE_INDEX_FIELD;	// Size of the file block index field in bytes. 
 	int FILE_BLOCKS_MAX;	// The maximum amount of blocks a file can be separated into.
-	int FILE_DESCR_SIZE;	// Size of each file descriptor (FILE_SIZE_FIELD + ARRAY_SIZE)
+	int FILE_DESCR_SIZE;	// Size of each file descriptor (FILE_SIZE_FIELD + (FILE_INDEX_FIELD * FILE_BLOCKS_MAX))
 	int MAX_FILE_NO;		// Maximum number of files which can be stored by this file system.
 	int MAX_BLOCK_NO;       // Maximum number of blocks which can be supported by this file system.
 	int MAX_BLOCK_NO_DIV8;
