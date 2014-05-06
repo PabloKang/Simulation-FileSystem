@@ -351,7 +351,12 @@ void FileSystem53::delete_dir(int index, int start_pos, int len) {
  *    Return -2 for error (for duplication)
  */
 int FileSystem53::create(string symbolic_file_name) {
+	for (int i = 0; i < K; i++)
+	{
+		char* temp;
+		read_block(i, temp);
 
+	}
 	return -1;
 }
 
