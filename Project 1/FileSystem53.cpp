@@ -59,7 +59,7 @@ struct OpenFile {
 	}
 }; // END OpenFile
 
-OpenFile* openFileTable = new OpenFile[MAX_OPEN_FILE];	// Open File Table - Stores info of up to 3 open files
+OpenFile* oft = new OpenFile[MAX_OPEN_FILE];	// Open File Table - Stores info of up to 3 open files
 map<string, int>  dirFileMap;							// Directory File Map - <File Name, File Descriptor Index>
 
 
@@ -434,9 +434,9 @@ int FileSystem53::open_desc(int desc_no) {
 	int oftIndex = -1;	// OFT entry index
 
 	for (int i = 0; i < MAX_OPEN_FILE; i++) {
-		if (openFileTable[i].inUse == false) {
-			openFileTable[i].inUse = true;
-			openFileTable[i].fDescIndex = desc_no;
+		if (oft[i].inUse == false) {
+			oft[i].inUse = true;
+			oft[i].fDescIndex = desc_no;
 			oftIndex = i;
 			break;
 		}
@@ -470,9 +470,9 @@ int FileSystem53::open(string symbolic_file_name) {
 	catch (exception& e) { return -1; }
 	
 	for (int i = 0; i < MAX_OPEN_FILE; i++) {
-		if (openFileTable[i].inUse == false) {
-			openFileTable[i].inUse = true;
-			openFileTable[i].fDescIndex = desc_no;
+		if (oft[i].inUse == false) {
+			oft[i].inUse = true;
+			oft[i].fDescIndex = desc_no;
 			oftIndex = i;
 			break;
 		}
@@ -510,7 +510,7 @@ int FileSystem53::open(string symbolic_file_name) {
  3.6 Update current position so that next read() can be done from the first byte haven't-been-read.
  */
 int FileSystem53::read(int index, char* mem_area, int count) {
-	OpenFile * of = &openFileTable[index];
+	OpenFile * of = &oft[index];
 	int desc_no = of->fDescIndex;
 
 	int i = desc_no / FILE_DESCR_SIZE;
@@ -559,8 +559,11 @@ int FileSystem53::read(int index, char* mem_area, int count) {
  *    -2 for error case "Maximum file size reached" (not implemented.)
  */
 int FileSystem53::write(int index, char value, int count) {
+	OpenFile * of = &oft[index];
+	if (of->inUse == false)
+		return -1;
 
-	return -1;
+	return -2;
 }
 
 
@@ -590,7 +593,7 @@ int FileSystem53::lseek(int index, int pos) {
  */
 void FileSystem53::close(int index) {
 	if (index < MAX_OPEN_FILE) {
-		openFileTable[index].Close();
+		oft[index].Close();
 	}
 	else 
 		throw "ERROR >> CLOSE(): Index Out of Bounds.\n";
