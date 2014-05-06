@@ -21,12 +21,14 @@ int main() {
 	testFS.save();
 	testFS.restore();
 
-	char** test = new char*[6];
-	test[0] = new char[5];
+	//char** test = new char*[6];
+	//test[0] = new char[5];
 
-	test[0][0] = (char)1;
+	//test[0][0] = (char)1;
 
-	cout << '<' << test[0][0] << '>';
+	//cout << '<' << test[0][0] << '>' << endl;
+	char* h = new char[5];
+	testFS.read(0, h, 0);
 
 	// Holds the console open unil user input.
 	int i = 0;

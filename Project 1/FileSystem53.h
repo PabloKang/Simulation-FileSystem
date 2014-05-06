@@ -47,15 +47,15 @@ public:
 	bool	FileSystem53::feof(int index);
 	int		FileSystem53::search_dir(int index, string symbolic_file_name);
 	void	FileSystem53::delete_dir(int index, int start_pos, int len);
-	int		FileSystem53::create(string symbolic_file_name);					// DUE
-	int		FileSystem53::open_desc(int desc_no);								// DUE
-	int		FileSystem53::open(string symbolic_file_name);						// DUE
-	int		FileSystem53::read(int index, char* mem_area, int count);			// DUE
+	int		FileSystem53::create(string symbolic_file_name);					// COMPLETE
+	int		FileSystem53::open_desc(int desc_no);								// COMPLETE
+	int		FileSystem53::open(string symbolic_file_name);						// COMPLETE
+	int		FileSystem53::read(int index, char* mem_area, int count);			// COMPLETE
 	int		FileSystem53::write(int index, char value, int count);				// DUE
 	int		FileSystem53::lseek(int index, int pos);							// DUE
-	void	FileSystem53::close(int index);										// DUE
+	void	FileSystem53::close(int index);										// COMPLETE
 	int		FileSystem53::deleteFile(string fileName);							// DUE
-	void	FileSystem53::directory();											// DUE
+	void	FileSystem53::directory();											// COMPLETE
 	void	FileSystem53::restore();											// COMPLETE
 	void	FileSystem53::save();												// COMPLETE
 	void	FileSystem53::diskdump(int start, int size);

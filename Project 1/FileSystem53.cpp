@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include "FileSystem53.h"
 using namespace std;
 
@@ -17,43 +18,58 @@ using namespace std;
 int FILE_SIZE_FIELD = 1;		// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
 int FILE_BLOCKS_MAX = 3;		// The maximum amount of blocks a file can be separated into.
 int FILE_DESCR_SIZE = FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
-int MAX_FILE_NO = 14;		// Maximum number of files which can be stored by this file system.
-int MAX_BLOCK_NO = 64;		// Maximum number of blocks which can be supported by this file system.
+int MAX_FILE_NO = 14;			// Maximum number of files which can be stored by this file system.
+int MAX_BLOCK_NO = 64;			// Maximum number of blocks which can be supported by this file system.
 int MAX_BLOCK_NO_DIV8 = MAX_BLOCK_NO / 8;
 int MAX_FILE_NAME_LEN = 32;		// Maximum size of file name in byte.
-int MAX_OPEN_FILE = 3;		// Maximum number of files to open at the same time.
-int FILEIO_BUFFER_SIZE = 64;		// Size of file io bufer
-int _EOF = -1;		// End-of-File
+int MAX_OPEN_FILE = 3;			// Maximum number of files to open at the same time.
+int FILEIO_BUFFER_SIZE = 64;	// Size of file io bufer
+int _EOF = -1;					// End-of-File
 
-int B = 64;			// Size (bytes) of each block
-int K = 7;			// Number of blocks for desc_table
-int F = 4;			// Number of File Descriptors per block
+int B = 64;						// Size (bytes) of each block
+int K = 7;						// Number of blocks for desc_table
+int F = 4;						// Number of File Descriptors per block
 
+// STRUCT: OpenFile - Information of a single, open file:
 struct OpenFile {
-	char* buffer;		// The Read/Write buffer
-	char currPos;			// The current position
-	char fDescIndex;	//The index of the open file’s file descriptor
+	bool inUse;					// Warns if OF index is in use
+	char* buffer;				// Read/Write buffer of file
+	int currPos;				// Current block index of read/write position in file
+	int fDescIndex;				// File Descriptor index
 
 	OpenFile()
 	{
+		inUse = false;
 		buffer = new char[B];
-		currPos = -1;
+		currPos = 0;
 		fDescIndex = -1;
 	}
-};
 
-map<char*, char>  dir_file; //Map files names to index in file descriptor
+	void Open(int fdIndex)
+	{
+		inUse = true;
+		fDescIndex = fdIndex;
+	}
+
+	void Close()
+	{
+		delete[] buffer;
+		currPos = 0;
+		fDescIndex = -1;
+	}
+}; // END OpenFile
+
+OpenFile* openFileTable = new OpenFile[MAX_OPEN_FILE];	// Open File Table - Stores info of up to 3 open files
+map<string, int>  dirFileMap;							// Directory File Map - <File Name, File Descriptor Index>
+
 
 /**********************************
-* Constructor of this File system.
+* Constructor of this File syste	m.
 *   1. Initialize IO system.
 *   2. Format it if not done.
 */
 FileSystem53::FileSystem53(int l, int b, string storage) {
 
-
-
-	
 	// Initialize the description table cache
 	desc_table = new char*[K];
 	for (int i = 0; i < K; ++i) 
@@ -207,14 +223,15 @@ void FileSystem53::format() {
  *    Return char[4] of descriptor
  */
 char* FileSystem53::read_descriptor(int no) {
+	int i = no / 4;
+	int j = no % 4;
 
-	char tempChar = 'a';
-	char* desChar = &tempChar;
+	char* desc = new char[FILE_DESCR_SIZE];
 
+	for (int k = 0; k < FILE_DESCR_SIZE; k++)
+		desc[k] = desc_table[i][j + k];
 
-	return desChar;
-
-
+	return desc;
 }
 
 
@@ -229,8 +246,11 @@ char* FileSystem53::read_descriptor(int no) {
  *    none
  */
 void FileSystem53::clear_descriptor(int no) {
+	int i = no / 4;
+	int j = no % 4;
 
-
+	for (int k = 0; k < FILE_DESCR_SIZE; k++)
+		desc_table[i][j + k] = '0';
 }
 
 
@@ -259,13 +279,17 @@ void FileSystem53::write_descriptor(int no, char* desc) {
 int FileSystem53::find_empty_descriptor() {
 	int index = -1;
 
-	for (int i = 1; i < K; i++)
+	for (int i = 1; i <= MAX_FILE_NO / 4; i++)
 	{
-		for (int j = 0; j < B; j++)
+		for (int j = 0; j < FILE_DESCR_SIZE * F; j++)
 		{
 			if (j % 4 == 0 && desc_table[i][j] == '0')
 			{
 				index = (i * 4) + (j / 4);
+				
+				if (i >= 3 && j >= 2 )
+					index = -1;
+
 				break;
 			}
 		}
@@ -385,13 +409,16 @@ void FileSystem53::delete_dir(int index, int start_pos, int len) {
  *    Return -2 for error (for duplication)
  */
 int FileSystem53::create(string symbolic_file_name) {
-	int desc = find_empty_descriptor();
-	if (desc == -1)
-		return -1; // error: no space in disk
-
+	int desc_no = find_empty_descriptor();
 	
+	if (desc_no != -1) {
+		try { dirFileMap.at(symbolic_file_name); }
+		catch (exception& e) { return -2; }
 
-	return -1;
+		dirFileMap.insert(std::pair<string, int>(symbolic_file_name, desc_no));
+		return 0;
+	}
+	else return -1; // error: no space in disk
 }
 
 
@@ -404,8 +431,17 @@ int FileSystem53::create(string symbolic_file_name) {
  *    Return -1 for error.
  */
 int FileSystem53::open_desc(int desc_no) {
+	int oftIndex = -1;	// OFT entry index
 
-	return -1;
+	for (int i = 0; i < MAX_OPEN_FILE; i++) {
+		if (openFileTable[i].inUse == false) {
+			openFileTable[i].inUse = true;
+			openFileTable[i].fDescIndex = desc_no;
+			oftIndex = i;
+			break;
+		}
+	}
+	return oftIndex;
 }
 
 
@@ -427,8 +463,21 @@ int FileSystem53::open_desc(int desc_no) {
 // 5. Initialize the entry (descriptor number, current position, etc.)
 // 6. Return entry number
 int FileSystem53::open(string symbolic_file_name) {
+	int desc_no = -1;	// Descriptor index
+	int oftIndex = -2;	// OFT entry index
 
-	return -1;
+	try { desc_no = dirFileMap.at(symbolic_file_name); }
+	catch (exception& e) { return -1; }
+	
+	for (int i = 0; i < MAX_OPEN_FILE; i++) {
+		if (openFileTable[i].inUse == false) {
+			openFileTable[i].inUse = true;
+			openFileTable[i].fDescIndex = desc_no;
+			oftIndex = i;
+			break;
+		}
+	}
+	return oftIndex;
 }
 
 
@@ -461,7 +510,35 @@ int FileSystem53::open(string symbolic_file_name) {
  3.6 Update current position so that next read() can be done from the first byte haven't-been-read.
  */
 int FileSystem53::read(int index, char* mem_area, int count) {
+	OpenFile * of = &openFileTable[index];
+	int desc_no = of->fDescIndex;
 
+	int i = desc_no / FILE_DESCR_SIZE;
+	int j = desc_no - (i * FILE_DESCR_SIZE);
+
+	if (desc_table[i][j] > 0){
+		int fSize = desc_table[i][j];
+		if (fSize = of->currPos) { return -2; }
+		
+		int* blocks = new int[FILE_BLOCKS_MAX];
+		// Find block list for file being read
+		for (int b = 1; b <= FILE_BLOCKS_MAX; b++)
+			blocks[b] = desc_table[i][j + b];
+		
+		int posMod = 0;
+		// Read file into mem_area
+		for (; posMod < count; posMod++) {
+			of->currPos += posMod;
+
+			if (of->currPos >= B) {
+				int nextBlock = of->currPos / 64;
+				read_block(nextBlock, of->buffer);
+			}
+
+			mem_area[posMod] = of->buffer[of->currPos];
+		}
+		return posMod;
+	}
 	return -1;
 }
 
@@ -512,10 +589,11 @@ int FileSystem53::lseek(int index, int pos) {
  *    none
  */
 void FileSystem53::close(int index) {
-	if (index == 0 || oft[index] != open)
-		throw error;
-	//flush buffer?
-	//reset values..not sure what values get updated when we open a file, but all those need to be reset i think
+	if (index < MAX_OPEN_FILE) {
+		openFileTable[index].Close();
+	}
+	else 
+		throw "ERROR >> CLOSE(): Index Out of Bounds.\n";
 }
 
 
@@ -545,33 +623,12 @@ int FileSystem53::deleteFile(string fileName) {
  *    None
  */
 void FileSystem53::directory() {
-	for (int i = 0; i < blocknum; ++i) { // For each directory block
-
-		if (currentblockisoccupied) {
-			char* b = new char[64];
-			read_block(curr_block_num, b);
-
-			//hold name of file--upto 10 bytes
-			char fileName[10];
-
-			char desc_num[4];
-			//Skip to each block
-			for (int j = 0; j < B; j += 8) {
-				//Upto 10 chars in file name
-				for (int k = 0; k < 10; k++) {
-					if (isascii(b[j + k]))
-						fileName[k] = b[j + k];
-					else
-						fileName[k] = ' ';
-				}
-
-				//TODO: how do we extract the size of the file?
-				fileSize = getSize(descriptor)
-				if (name[0] != '\0') {
-					cout << name << " " << desc_size << endl;
-				}
-			}
-		}
+	for (map<string, int>::iterator iter = dirFileMap.begin(); iter != dirFileMap.end(); iter++)
+	{
+		int desc_no = iter->second;
+		int i = desc_no / FILE_DESCR_SIZE;
+		int j = desc_no - (i * FILE_DESCR_SIZE);
+		cout << "File Name:" << iter->first << " File Length (bytes):" << desc_table[i][j] << endl;
 	}
 }
 
