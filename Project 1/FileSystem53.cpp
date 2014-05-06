@@ -475,8 +475,10 @@ int FileSystem53::lseek(int index, int pos) {
  *    none
  */
 void FileSystem53::close(int index) {
-
-
+	if (index == 0 || oft[index] != open)
+		throw error;
+	//flush buffer?
+	//reset values..not sure what values get updated when we open a file, but all those need to be reset i think
 }
 
 
@@ -506,8 +508,34 @@ int FileSystem53::deleteFile(string fileName) {
  *    None
  */
 void FileSystem53::directory() {
+	for (int i = 0; i < blocknum; ++i) { // For each directory block
 
+		if (currentblockisoccupied) {
+			char* b = new char[64];
+			read_block(curr_block_num, b);
 
+			//hold name of file--upto 10 bytes
+			char fileName[10];
+
+			char desc_num[4];
+			//Skip to each block
+			for (int j = 0; j < B; j += 8) {
+				//Upto 10 chars in file name
+				for (int k = 0; k < 10; k++) {
+					if (isascii(b[j + k]))
+						fileName[k] = b[j + k];
+					else
+						fileName[k] = ' ';
+				}
+
+				//TODO: how do we extract the size of the file?
+				fileSize = getSize(descriptor)
+				if (name[0] != '\0') {
+					cout << name << " " << desc_size << endl;
+				}
+			}
+		}
+	}
 }
 
 

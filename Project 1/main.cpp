@@ -24,12 +24,9 @@ int main() {
 	char** test = new char*[6];
 	test[0] = new char[5];
 
-	test[0][0] = (char)192;
-	test[0][1] = (char)'-';
+	test[0][0] = (char)1;
 
-	int a = test[0][0];
-
-	cout << a << endl << test[0][1];
+	cout << '<' << test[0][0] << '>';
 
 	// Holds the console open unil user input.
 	int i = 0;

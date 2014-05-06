@@ -54,34 +54,34 @@ class FileSystem53 {
 	*/
 	FileSystem53(int l, int b, string storage);
 
-	void	FileSystem53::read_block(int i, char *p);			// COMPLETE
-	void	FileSystem53::write_block(int i, char *p);			// COMPLETE
-	void	OpenFileTable();
-	int		find_oft();
-	void	deallocate_oft(int index);
-	void	format();											// COMPLETE
-	char*	read_descriptor(int no);
-	void	clear_descriptor(int no);							
-	void	write_descriptor(int no, char* desc);
-	int		find_empty_descriptor();
-	int		find_empty_block();
-	int		fgetc(int index);
-	int		fputc(int c, int index);
-	bool	feof(int index);
-	int		search_dir(int index, string symbolic_file_name);
-	void	delete_dir(int index, int start_pos, int len);
-	int		create(string symbolic_file_name);					// DUE
-	int		open_desc(int desc_no);								// DUE
-	int		open(string symbolic_file_name);					// DUE
-	int		read(int index, char* mem_area, int count);			// DUE
-	int		write(int index, char value, int count);			// DUE
-	int		lseek(int index, int pos);							// DUE
-	void	close(int index);									// DUE
-	int		deleteFile(string fileName);						// DUE
-	void	directory();										// DUE
-	void	restore();											// COMPLETE
-	void	save();												// COMPLETE
-	void	diskdump(int start, int size);
+	void	FileSystem53::read_block(int i, char *p);							// COMPLETE
+	void	FileSystem53::write_block(int i, char *p);							// COMPLETE
+	void	FileSystem53::OpenFileTable();
+	int		FileSystem53::find_oft();
+	void	FileSystem53::deallocate_oft(int index);
+	void	FileSystem53::format();												// COMPLETE
+	char*	FileSystem53::read_descriptor(int no);
+	void	FileSystem53::clear_descriptor(int no);
+	void	FileSystem53::write_descriptor(int no, char* desc);
+	int		FileSystem53::find_empty_descriptor();
+	int		FileSystem53::find_empty_block();
+	int		FileSystem53::fgetc(int index);
+	int		FileSystem53::fputc(int c, int index);
+	bool	FileSystem53::feof(int index);
+	int		FileSystem53::search_dir(int index, string symbolic_file_name);
+	void	FileSystem53::delete_dir(int index, int start_pos, int len);
+	int		FileSystem53::create(string symbolic_file_name);					// DUE
+	int		FileSystem53::open_desc(int desc_no);								// DUE
+	int		FileSystem53::open(string symbolic_file_name);						// DUE
+	int		FileSystem53::read(int index, char* mem_area, int count);			// DUE
+	int		FileSystem53::write(int index, char value, int count);				// DUE
+	int		FileSystem53::lseek(int index, int pos);							// DUE
+	void	FileSystem53::close(int index);										// DUE
+	int		FileSystem53::deleteFile(string fileName);							// DUE
+	void	FileSystem53::directory();											// DUE
+	void	FileSystem53::restore();											// COMPLETE
+	void	FileSystem53::save();												// COMPLETE
+	void	FileSystem53::diskdump(int start, int size);
 };
 
 	
