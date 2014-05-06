@@ -13,26 +13,46 @@
 using namespace std;
 
 
+// Filesystem format parameters:
+int FILE_SIZE_FIELD = 1;		// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
+int FILE_BLOCKS_MAX = 3;		// The maximum amount of blocks a file can be separated into.
+int FILE_DESCR_SIZE = FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
+int MAX_FILE_NO = 14;		// Maximum number of files which can be stored by this file system.
+int MAX_BLOCK_NO = 64;		// Maximum number of blocks which can be supported by this file system.
+int MAX_BLOCK_NO_DIV8 = MAX_BLOCK_NO / 8;
+int MAX_FILE_NAME_LEN = 32;		// Maximum size of file name in byte.
+int MAX_OPEN_FILE = 3;		// Maximum number of files to open at the same time.
+int FILEIO_BUFFER_SIZE = 64;		// Size of file io bufer
+int _EOF = -1;		// End-of-File
+
+int B = 64;			// Size (bytes) of each block
+int K = 7;			// Number of blocks for desc_table
+int F = 4;			// Number of File Descriptors per block
+
+struct OpenFile {
+	char* buffer;		// The Read/Write buffer
+	char currPos;			// The current position
+	char fDescIndex;	//The index of the open file’s file descriptor
+
+	OpenFile()
+	{
+		buffer = new char[B];
+		currPos = -1;
+		fDescIndex = -1;
+	}
+};
+
+map<char*, char>  dir_file; //Map files names to index in file descriptor
+
 /**********************************
 * Constructor of this File system.
 *   1. Initialize IO system.
 *   2. Format it if not done.
 */
 FileSystem53::FileSystem53(int l, int b, string storage) {
-	FILE_SIZE_FIELD		= 1;		// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
-	FILE_BLOCKS_MAX		= 3;		// The maximum amount of blocks a file can be separated into.
-	FILE_DESCR_SIZE		= FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
-	MAX_FILE_NO			= 14;		// Maximum number of files which can be stored by this file system.
-	MAX_BLOCK_NO		= 64;		// Maximum number of blocks which can be supported by this file system.
-	MAX_BLOCK_NO_DIV8	= MAX_BLOCK_NO / 8;
-	MAX_FILE_NAME_LEN	= 32;		// Maximum size of file name in byte.
-	MAX_OPEN_FILE		= 3;		// Maximum number of files to open at the same time.
-	FILEIO_BUFFER_SIZE	= 64;		// Size of file io bufer
-	_EOF				= -1;		// End-of-File
 
-	B = 64;			// Size (bytes) of each block
-	K = 7;			// Number of blocks for desc_table
-	F = 4;			// Number of File Descriptors per block
+
+
 	
 	// Initialize the description table cache
 	desc_table = new char*[K];
@@ -251,7 +271,6 @@ int FileSystem53::find_empty_descriptor() {
 		}
 	}
 	return index; 
-	
 }
 
 
