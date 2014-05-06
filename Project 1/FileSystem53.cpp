@@ -372,7 +372,7 @@ int FileSystem53::create(string symbolic_file_name) {
 
 	
 
-	return -1;
+	return 0;
 }
 
 
