@@ -237,8 +237,21 @@ void FileSystem53::write_descriptor(int no, char* desc) {
  * Then it returns descriptor number.
  */
 int FileSystem53::find_empty_descriptor() {
+	int index = -1;
 
-	return 0;
+	for (int i = 1; i < K; i++)
+	{
+		for (int j = 0; j < B; j++)
+		{
+			if (j % 4 == 0 && desc_table[i][j] == '0')
+			{
+				index = (i * 4) + (j / 4);
+				break;
+			}
+		}
+	}
+	return index; 
+	
 }
 
 
@@ -353,6 +366,11 @@ void FileSystem53::delete_dir(int index, int start_pos, int len) {
  *    Return -2 for error (for duplication)
  */
 int FileSystem53::create(string symbolic_file_name) {
+	int desc = find_empty_descriptor();
+	if (desc == -1)
+		return -1; // error: no space in disk
+
+	
 
 	return -1;
 }
