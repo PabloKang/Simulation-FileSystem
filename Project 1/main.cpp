@@ -21,6 +21,16 @@ int main() {
 	testFS.save();
 	testFS.restore();
 
+	char** test = new char*[6];
+	test[0] = new char[5];
+
+	test[0][0] = (char)192;
+	test[0][1] = (char)'-';
+
+	int a = test[0][0];
+
+	cout << a << endl << test[0][1];
+
 	// Holds the console open unil user input.
 	int i = 0;
 	cin >> i;
