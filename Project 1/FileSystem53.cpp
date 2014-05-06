@@ -62,6 +62,8 @@ FileSystem53::FileSystem53(int l, int b, string storage) {
 		else
 			ldisk[i] = new char[B];
 	}
+	
+	format();
 }
 
 
@@ -149,6 +151,7 @@ void FileSystem53::deallocate_oft(int index) {
 void FileSystem53::format() {
 	int arraySize = 0;	// Size of b block.
 
+	// 1. Initialize the first K blocks with zeros.
 	for (int i = 0; i < K; i++) {
 		// Determine size of temporary block
 		if (i == 0)
@@ -159,13 +162,18 @@ void FileSystem53::format() {
 		char* b = new char[arraySize];
 
 		// Fill temporary block
-		for (int j = 0; j < arraySize; j++)
+		for (int j = 0; j < arraySize; j++) {
 			b[j] = '0';
+			desc_table[i][j] = '0';
+		}
 		
 		// Write to ldisk
 		write_block(i, b);
 		delete[] b;
 	}
+
+	// 2. Create root directory descriptor for directory file.
+	char dir[12] = "Directory 1";
 }
 
 

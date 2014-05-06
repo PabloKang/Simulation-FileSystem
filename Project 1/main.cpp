@@ -17,6 +17,7 @@ int main() {
 	// CURRENT MAIN() CODE IS FOR TESTING PURPOSES ONLY
 	FileSystem53 testFS(0,0,"");
 	testFS.format();
+	
 	testFS.save();
 	testFS.restore();
 
