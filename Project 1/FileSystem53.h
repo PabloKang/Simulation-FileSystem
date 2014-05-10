@@ -55,23 +55,21 @@ class FileSystem53 {
 	map<string, int>  dirFileMap;					// Directory File Map - <File Name, File Descriptor Index>
 
 
-	// FILESYSTEM53 FORMATTING PARAMETERS:
-	int MAX_BLOCK_NO		= 64;					// Maximum number of blocks which can be supported by this file system.
-	int MAX_BLOCK_NO_DIV8	= MAX_BLOCK_NO / 8;		// Maximum nmber of blocks in the file system, divided by 8.
-	int FILE_SIZE_FIELD		= 1;					// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
-	int FILE_BLOCKS_MAX		= 3;					// The maximum amount of blocks a file can be separated into.
-	int FILE_DESCR_SIZE		= FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
-	int MAX_FILE_NO			= 14;					// Maximum number of files which can be stored by this file system.
-	int MAX_FILE_NAME_LEN	= 32;					// Maximum size of file name in byte.
-	int MAX_OPEN_FILE		= 3;					// Maximum number of files to open at the same time.
-	int FILEIO_BUFFER_SIZE	= 64;					// Size of file IO buffer.
-	int B					= 64;					// Size (in bytes) of each block.
-	int K					= 7;					// Number of blocks for desc_table
-	int F					= 4;					// Number of File Descriptors per block.
-
 
 public:
-
+	// FILESYSTEM53 FORMATTING PARAMETERS:
+	int MAX_BLOCK_NO = 64;					// Maximum number of blocks which can be supported by this file system.
+	int MAX_BLOCK_NO_DIV8 = MAX_BLOCK_NO / 8;		// Maximum nmber of blocks in the file system, divided by 8.
+	int FILE_SIZE_FIELD = 1;					// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
+	int FILE_BLOCKS_MAX = 3;					// The maximum amount of blocks a file can be separated into.
+	int FILE_DESCR_SIZE = FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
+	int MAX_FILE_NO = 14;					// Maximum number of files which can be stored by this file system.
+	int MAX_FILE_NAME_LEN = 32;					// Maximum size of file name in byte.
+	int MAX_OPEN_FILE = 3;					// Maximum number of files to open at the same time.
+	int FILEIO_BUFFER_SIZE = 64;					// Size of file IO buffer.
+	int B = 64;					// Size (in bytes) of each block.
+	int K = 7;					// Number of blocks for desc_table
+	int F = 4;					// Number of File Descriptors per block.
 
 	//	Constructor of file system.
 	//	1.	Initialize IO system.
