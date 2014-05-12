@@ -8,12 +8,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <map>
 using namespace std;
 
-
-#define _EOF -1		// End-of-File
+#define DEBUG		0	// Debug mode flag
+#define FLAG_EOF	-1	// End-of-File
+#define FLAG_EMPTY	-1	// Empty flag for array representation
 
 
 class FileSystem53 {
@@ -45,32 +47,48 @@ class FileSystem53 {
 	struct OpenFile {
 		bool	inUse;			// Warns if OF index is in use
 		char*	buffer;			// Read/Write buffer of file
-		int		pos;			// Current block index of read/write position in file
 		int		desc;			// File Descriptor index
+		int		cpos;			// Current index of read/write position in file
+		int		cblk;			// Current block of the read/write positio in file
+		int		size;			// Size of file
+		
+		void Open(int index)
+		{
+			inUse = true;
+			desc = index;
+			cpos = 0;
+		}
+		void Close()
+		{
+			inUse = false;
+			desc = FLAG_EMPTY;
+			cpos = FLAG_EMPTY;
+			cblk = FLAG_EMPTY;
+			size = FLAG_EMPTY;
+		}
 	}; // END STRUCT
 
 
-	OpenFile* oft = new OpenFile[MAX_OPEN_FILE];	// Open File Table - Stores info of up to 3 open files.
+	OpenFile* oft;	// Open File Table - Stores info of up to 3 open files.
 
 	map<string, int>  dirFileMap;					// Directory File Map - <File Name, File Descriptor Index>
 
 
-	// FILESYSTEM53 FORMATTING PARAMETERS:
-	int MAX_BLOCK_NO		= 64;					// Maximum number of blocks which can be supported by this file system.
-	int MAX_BLOCK_NO_DIV8	= MAX_BLOCK_NO / 8;		// Maximum nmber of blocks in the file system, divided by 8.
-	int FILE_SIZE_FIELD		= 1;					// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
-	int FILE_BLOCKS_MAX		= 3;					// The maximum amount of blocks a file can be separated into.
-	int FILE_DESCR_SIZE		= FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
-	int MAX_FILE_NO			= 14;					// Maximum number of files which can be stored by this file system.
-	int MAX_FILE_NAME_LEN	= 32;					// Maximum size of file name in byte.
-	int MAX_OPEN_FILE		= 3;					// Maximum number of files to open at the same time.
-	int FILEIO_BUFFER_SIZE	= 64;					// Size of file IO buffer.
-	int B					= 64;					// Size (in bytes) of each block.
-	int K					= 7;					// Number of blocks for desc_table
-	int F					= 4;					// Number of File Descriptors per block.
-
-
 public:
+
+	// FILESYSTEM53 FORMATTING PARAMETERS:
+	int MAX_BLOCK_NO = 64;					// Maximum number of blocks which can be supported by this file system.
+	int MAX_BLOCK_NO_DIV8 = MAX_BLOCK_NO / 8;		// Maximum nmber of blocks in the file system, divided by 8.
+	int FILE_SIZE_FIELD = 1;					// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
+	int FILE_BLOCKS_MAX = 3;					// The maximum amount of blocks a file can be separated into.
+	int FILE_DESCR_SIZE = FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
+	int MAX_FILE_NO = 14;					// Maximum number of files which can be stored by this file system.
+	int MAX_FILE_NAME_LEN = 32;					// Maximum size of file name in byte.
+	int MAX_OPEN_FILES = 3;					// Maximum number of files to open at the same time.
+	int FILEIO_BUFFER_SIZE = 64;					// Size of file IO buffer.
+	int B = 64;					// Size (in bytes) of each block.
+	int K = 7;					// Number of blocks for desc_table
+	int F = 4;					// Number of File Descriptors per block.
 
 
 	//	Constructor of file system.
@@ -145,6 +163,18 @@ public:
 	//	-	none
 	void	FileSystem53::write_descriptor(int no, char* desc);
 	
+
+	void	FileSystem53::update_desc_size(int descNum, int value);
+
+
+	void	FileSystem53::update_desc_block(int descNum, int blockNum, int value);
+
+
+	int		FileSystem53::get_desc_block_value(int descNum, int blockNum);
+
+
+	int		FileSystem53::get_desc_size(int descNum);
+
 
 	//	Search for an unoccupied descriptor.
 	//	If ARRAY[0] is zero, this descriptor is not occupied.
@@ -370,5 +400,19 @@ public:
 
 	// Disk dump, from block 'start' to 'start+size-1'.
 	void	FileSystem53::diskdump(int start, int size);
+
+
+	string	FileSystem53::toString();
+
+
+	template <typename T>
+	void	FileSystem53::numberToCharArray(const T& Number, char* cstring);
+
+
+	void	FileSystem53::numberToCharArray(int& number, char* cstring, int size);
+
+
+	template <typename T>
+	T		FileSystem53::charArrayToNumber(const string& Text);
 };
 

@@ -38,7 +38,8 @@ FileSystem53::FileSystem53(int l, int b, string storage) {
 		else
 			lDisk[i] = new char[B];
 	}
-	
+
+	OpenFileTable();
 	format();
 }
 
@@ -86,7 +87,13 @@ void FileSystem53::write_block(int i, char *p) {
 
 
 void FileSystem53::OpenFileTable() {
-
+	oft = new OpenFile[MAX_OPEN_FILES];
+	for (int i = 0; i < MAX_OPEN_FILES; ++i) {
+		oft[i].inUse = false;
+		oft[i].buffer = new char[B];
+		oft[i].desc = -1;
+		oft[i].cpos = 0;
+	}
 }
 
 
@@ -104,32 +111,65 @@ void FileSystem53::deallocate_oft(int index) {
 void FileSystem53::format() {
 	int arraySize = 0;	// Size of b block.
 
-	// 1. Initialize the first K blocks with zeros.
-	for (int i = 0; i < K; i++) {
+	// initialize descTable
+	for (int i = 0; i < K; ++i) {
 		// Determine size of temporary block
 		if (i == 0)
 			arraySize = MAX_BLOCK_NO;
 		else if (i > 0 && i < K)
 			arraySize = FILE_DESCR_SIZE * F;
 
-		char* b = new char[arraySize];
-
-		// Fill temporary block
-		for (int j = 0; j < arraySize; j++) {
-			b[j] = '0';
-			descTable[i][j] = '0';
+		for (int j = 0; j < arraySize; ++j) {
+			descTable[i][j] = FLAG_EMPTY;
 		}
-		
-		// Write to lDisk
-		write_block(i, b);
-		delete[] b;
 	}
 
-	// 2. Create root directory descriptor for directory file.
-	char* d = new char[FILE_DESCR_SIZE * F];
-	read_block(1, d);
+	// initialize bitmap
+	for (int i = 0; i < 10; ++i) {
+		descTable[0][i] = '1';
+	}
 
+	// create directory file
+	char* directory = new char[B * 3];
+	for (int i = 0; i < B * 3; ++i) {
+		directory[i] = FLAG_EMPTY;
+	}
 
+	// write directory to disk
+	write_descriptor(0, directory);
+	int emptyBlockIndex = find_empty_block();
+	descTable[0][emptyBlockIndex] = '1';
+	write_block(emptyBlockIndex, directory); // here we initialize the first block of the dir
+	oft[0].cpos = 0;
+	oft[0].cblk = emptyBlockIndex;
+	oft[0].size = 0;
+	update_desc_block(0, 0, emptyBlockIndex);
+	update_desc_size(0, 0);
+
+	//// 1. Initialize the first K blocks with zeros.
+	//for (int i = 0; i < K; i++) {
+	//	// Determine size of temporary block
+	//	if (i == 0)
+	//		arraySize = MAX_BLOCK_NO;
+	//	else if (i > 0 && i < K)
+	//		arraySize = FILE_DESCR_SIZE * F;
+
+	//	char* b = new char[arraySize];
+
+	//	// Fill temporary block
+	//	for (int j = 0; j < arraySize; j++) {
+	//		b[j] = '0';
+	//		descTable[i][j] = '0';
+	//	}
+	//	
+	//	// Write to lDisk
+	//	write_block(i, b);
+	//	delete[] b;
+	//}
+
+	//// 2. Create root directory descriptor for directory file.
+	//char* d = new char[FILE_DESCR_SIZE * F];
+	//read_block(1, d);
 }
 
 
@@ -160,6 +200,86 @@ void FileSystem53::write_descriptor(int no, char* desc) {
 
 }
 
+void FileSystem53::update_desc_size(int descNum, int value)
+{
+	char v[4];
+	numberToCharArray(value, v, 4);
+
+	// get row and column of descTable
+	int row = (descNum / 4) + 1;
+	int col = (descNum % 4) * 16;
+	for (int i = 0; i < 4; ++i) {
+		
+		descTable[row][col++] = v[i];
+	}
+}
+
+void FileSystem53::update_desc_block(int descNum, int blockNum, int value)
+{
+	// get row and column of descTable
+	int row = (descNum / 4) + 1;
+	int col = (descNum % 4) * 16;
+
+	char v[4];
+	numberToCharArray(value, v, 4);
+	switch (blockNum) {
+	case 0:
+		col += 4;
+		break;
+	case 1:
+		col += 8;
+		break;
+	case 2:
+		col += 12;
+		break;
+	}
+
+	for (int i = 0; i < 4; ++i) {
+		descTable[row][col++] = v[i];
+	}
+
+	if (DEBUG) {
+		cout << "Updated DescNum " << descNum << " at block " << blockNum << " with value " << value << endl;
+	}
+}
+
+int FileSystem53::get_desc_block_value(int descNum, int blockNum)
+{
+	// get row and column of descTable
+	int row = (descNum / 4) + 1;
+	int col = (descNum % 4) * 16;
+
+	char v[4];
+	switch (blockNum) {
+	case 0:
+		col += 4;
+		break;
+	case 1:
+		col += 8;
+		break;
+	case 2:
+		col += 12;
+		break;
+	}
+	for (int i = 0; i < 4; ++i) {
+		v[i] = descTable[row][col++];
+	}
+	return charArrayToNumber<int>(v);
+}
+
+int FileSystem53::get_desc_size(int descNum)
+{
+	// get row and column of descTable
+	int row = (descNum / 4) + 1;
+	int col = (descNum % 4) * 16;
+
+	char v[4];
+
+	for (int i = 0; i < 4; ++i) {
+		v[i] = descTable[row][col++];
+	}
+	return charArrayToNumber<int>(v);
+}
 
 int FileSystem53::find_empty_descriptor() {
 	int index = -1;
@@ -190,14 +310,33 @@ int FileSystem53::find_empty_block() {
 
 
 int FileSystem53::fgetc(int index) {
-
-	return -1;
+	int curr = oft[index].cpos;
+	if (curr > 63)
+		return FLAG_EOF;
+	oft[index].cpos = curr + 1;
+	return oft[index].buffer[curr];
 }
 
 
 int FileSystem53::fputc(int c, int index) {
+	int curr = oft[index].cpos;
 
-	return -1;
+	if (curr > 63) {
+		cout << "Error: " << FLAG_EOF << "EOF" << endl;
+		return FLAG_EOF;
+	}
+
+	oft[index].buffer[curr] = c;
+
+	if (DEBUG) {
+		cout << "Placed char :" << c << " at index: " << index << " in position: " << curr << endl;
+		cout << "OFT[index]: " << oft[index].buffer << endl;
+	}
+
+	oft[index].cpos = curr + 1;
+	oft[index].size += 1;
+	update_desc_size(oft[index].desc, oft[index].size);
+	return oft[index].buffer[curr];
 }
 
 
@@ -237,7 +376,7 @@ int FileSystem53::create(string symbolic_file_name) {
 int FileSystem53::open_desc(int desc_no) {
 	int oftIndex = -1;	// OFT entry index
 
-	for (int i = 0; i < MAX_OPEN_FILE; i++) {
+	for (int i = 0; i < MAX_OPEN_FILES; i++) {
 		if (oft[i].inUse == false) {
 			oft[i].inUse = true;
 			oft[i].desc = desc_no;
@@ -256,7 +395,7 @@ int FileSystem53::open(string symbolic_file_name) {
 	try { desc_no = dirFileMap.at(symbolic_file_name); }
 	catch (exception& e) { return -1; }
 	
-	for (int i = 0; i < MAX_OPEN_FILE; i++) {
+	for (int i = 0; i < MAX_OPEN_FILES; i++) {
 		if (oft[i].inUse == false) {
 			oft[i].inUse = true;
 			oft[i].desc = desc_no;
@@ -277,7 +416,7 @@ int FileSystem53::read(int index, char* mem_area, int count) {
 
 	if (descTable[i][j] > 0){
 		int fSize = descTable[i][j];
-		if (fSize = of->pos) { return -2; }
+		if (fSize = of->cpos) { return -2; }
 		
 		int* blocks = new int[FILE_BLOCKS_MAX];
 		// Find block list for file being read
@@ -287,14 +426,14 @@ int FileSystem53::read(int index, char* mem_area, int count) {
 		int posMod = 0;
 		// Read file into mem_area
 		for (; posMod < count; posMod++) {
-			of->pos += posMod;
+			of->cpos += posMod;
 
-			if (of->pos >= B) {
-				int nextBlock = of->pos / 64;
+			if (of->cpos >= B) {
+				int nextBlock = of->cpos / 64;
 				read_block(nextBlock, of->buffer);
 			}
 
-			mem_area[posMod] = of->buffer[of->pos];
+			mem_area[posMod] = of->buffer[of->cpos];
 		}
 		return posMod;
 	}
@@ -318,7 +457,7 @@ int FileSystem53::lseek(int index, int pos) {
 
 
 void FileSystem53::close(int index) {
-	if (index < MAX_OPEN_FILE) {
+	if (index < MAX_OPEN_FILES) {
 		deallocate_oft(index);
 	}
 	else 
@@ -418,3 +557,46 @@ void FileSystem53::diskdump(int start, int size) {
 
 }
 
+
+// Prints entire filesystem to console
+string FileSystem53::toString()
+{
+	stringstream ss;
+	for (int i = 0; i < K; ++i) {
+		for (int j = 0; j < MAX_BLOCK_NO; ++j) {
+			ss << descTable[i][j];
+		}
+		ss << '\n';
+	}
+	return ss.str();
+}
+
+
+template <typename T>
+void FileSystem53::numberToCharArray(const T& Number, char* cstring)
+{
+	ostringstream ss;
+	ss << Number;
+	strcpy(cstring, ss.str().c_str());
+}
+
+
+void FileSystem53::numberToCharArray(int& number, char* cstring, int size)
+{
+	for (int i = 0; i < size; ++i) {
+		cstring[i] = '0';
+	}
+	while (number > 0) {
+		cstring[--size] = (char)(((int)'0') + (number % 10));
+		number /= 10;
+	}
+}
+
+
+template <typename T>
+T FileSystem53::charArrayToNumber(const string& Text)
+{
+	istringstream ss(Text);
+	T result;
+	return ss >> result ? result : 0;
+}
