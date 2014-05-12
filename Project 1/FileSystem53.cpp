@@ -5,7 +5,6 @@
 // Copyright   : Your copyright notice
 // Description : First Project Lab
 //============================================================================
-
 #include "FileSystem53.h"
 using namespace std;
 
@@ -14,16 +13,16 @@ FileSystem53::FileSystem53(int l, int b, string storage) {
 
 	// Initialize the description table cache
 	descTable = new char*[K];
-	for (int i = 0; i < K; ++i) 
+	for (int i = 0; i < K; ++i)
 	{
 		// Initalize Bytemap
-		if (i == 0) 
+		if (i == 0)
 			descTable[i] = new char[MAX_BLOCK_NO];
 		// Initialize File Descriptors
-		else 
+		else
 			descTable[i] = new char[FILE_DESCR_SIZE * F];
 	}
-		
+
 	// Initialize the lDisk
 	lDisk = new char*[MAX_BLOCK_NO];
 	for (int i = 0; i < MAX_BLOCK_NO; ++i)
@@ -38,7 +37,7 @@ FileSystem53::FileSystem53(int l, int b, string storage) {
 		else
 			lDisk[i] = new char[B];
 	}
-	
+
 	format();
 }
 
@@ -47,7 +46,7 @@ void FileSystem53::read_block(int i, char *p) {
 	if (i < MAX_BLOCK_NO)
 	{
 		int arrayLimit = 0;		// Array size for block to be read.
-		
+
 		// Set arrayLimit to match for the block area (bytemap, FD's, data blocks) being read.
 		if (i == 0)
 			arrayLimit = MAX_BLOCK_NO;
@@ -55,7 +54,7 @@ void FileSystem53::read_block(int i, char *p) {
 			arrayLimit = FILE_DESCR_SIZE * F;
 		else if (i >= K && i < MAX_BLOCK_NO)
 			arrayLimit = B;
-		
+
 		// Copy all entries in the block at position 'i' to the memory array 'p'
 		for (int j = 0; j < arrayLimit; j++)
 			p[j] = lDisk[i][j];
@@ -119,7 +118,7 @@ void FileSystem53::format() {
 			b[j] = '0';
 			descTable[i][j] = '0';
 		}
-		
+
 		// Write to lDisk
 		write_block(i, b);
 		delete[] b;
@@ -171,15 +170,15 @@ int FileSystem53::find_empty_descriptor() {
 			if (j % 4 == 0 && descTable[i][j] == '0')
 			{
 				index = (i * 4) + (j / 4);
-				
-				if (i >= 3 && j >= 2 )
+
+				if (i >= 3 && j >= 2)
 					index = -1;
 
 				break;
 			}
 		}
 	}
-	return index; 
+	return index;
 }
 
 
@@ -222,7 +221,7 @@ void FileSystem53::delete_dir(int index, int start_pos, int len) {
 
 int FileSystem53::create(string symbolic_file_name) {
 	int desc_no = find_empty_descriptor();
-	
+
 	if (desc_no != -1) {
 		try { dirFileMap.at(symbolic_file_name); }
 		catch (exception& e) { return -2; }
@@ -255,7 +254,7 @@ int FileSystem53::open(string symbolic_file_name) {
 
 	try { desc_no = dirFileMap.at(symbolic_file_name); }
 	catch (exception& e) { return -1; }
-	
+
 	for (int i = 0; i < MAX_OPEN_FILE; i++) {
 		if (oft[i].inUse == false) {
 			oft[i].inUse = true;
@@ -278,12 +277,12 @@ int FileSystem53::read(int index, char* mem_area, int count) {
 	if (descTable[i][j] > 0){
 		int fSize = descTable[i][j];
 		if (fSize = of->pos) { return -2; }
-		
+
 		int* blocks = new int[FILE_BLOCKS_MAX];
 		// Find block list for file being read
 		for (int b = 1; b <= FILE_BLOCKS_MAX; b++)
 			blocks[b] = descTable[i][j + b];
-		
+
 		int posMod = 0;
 		// Read file into mem_area
 		for (; posMod < count; posMod++) {
@@ -321,7 +320,7 @@ void FileSystem53::close(int index) {
 	if (index < MAX_OPEN_FILE) {
 		deallocate_oft(index);
 	}
-	else 
+	else
 		throw "ERROR >> CLOSE(): Index Out of Bounds.\n";
 }
 
@@ -343,15 +342,156 @@ void FileSystem53::directory() {
 }
 
 
+
+void FileSystem53::shellCr(std::string name){
+
+	string fname = name;
+	cin >> fname;
+	int result = create(fname);
+	if (result == 0)
+		cout << "file " << fname << " created" << endl;
+	else
+		cout << "error" << endl;
+
+}
+
+void FileSystem53::shellDe(std::string name){
+
+	string fname = name;
+	int result = deleteFile(fname);
+	if (result == 0)
+		cout << "file " << fname << " destroyed" << endl;
+	else
+		cout << "error" << endl;
+
+
+}
+
+void FileSystem53::shellOp(std::string name){
+	string fname = name;
+	int result = open(fname);
+	if (result != -1 || result != -2)
+		cout << "file " << fname << " opened, index = " << result << endl;
+	else
+		cout << "error" << endl;
+}
+
+void FileSystem53::shellCl(std::string name){
+	int index = atoi(name.c_str());
+	close(index);
+	cout << "file with index " << index << " closed" << endl;
+}
+
+void FileSystem53::shellRd(std::string name, std::string number){
+	int index = atoi(name.c_str());
+	int count = atoi(number.c_str());
+
+	char* ma = new char[count];
+	int result = read(index, ma, count);
+	if (result != -1 || result != -2)
+	{
+		cout << count << " bytes read: ";
+		for (int i = 0; i < count; i++)
+		{
+			std::cout << ma[i];
+		}
+	}
+	else
+		cout << "error";
+}
+
+void FileSystem53::shellWr(std::string name, std::string something2, std::string something3){
+	int index = atoi(name.c_str());
+	char c = something2[0];
+	int count = atoi(something3.c_str());
+
+	int result = write(index, c, count);
+	if (result != -1 || result != -2)
+		cout << count << " bytes written" << endl;
+	else
+		cout << "error" << endl;
+
+
+}
+
+void FileSystem53::shellSk(std::string name, std::string pos){
+	int index = atoi(name.c_str());
+	int position = atoi(pos.c_str());
+
+	int result = lseek(index, position);
+	if (result == 0)
+		cout << "current position is " << position << endl;
+	else
+		cout << "error" << endl;
+
+
+}
+
+void FileSystem53::shellDr(){
+	directory();
+}
+
+void FileSystem53::shellIn(std::string disk_cont){
+
+	if (std::ifstream("lDiskISO.txt")) // file exists
+	{
+		restore();
+		cout << "disk restored" << endl;
+	}
+	else
+	{
+		FileSystem53 newFS(0, 0, "lDiskISO.txt");
+		cout << "disk initialized" << endl;
+	}
+
+
+}
+
+void FileSystem53::shellSv(){
+	{
+		save();
+		cout << "disk saved" << endl;
+	}
+
+
+}
+
+
+
+
+void FileSystem53::shellCommandList() {
+
+	std::cout << "\nThis is the list of commands available...\n"
+		<< "\ncr <name>\n   Output: file <name> created\n"
+		<< "\nde <name>\n   Output: file <name> destroyed\n"
+		<< "\nop <name>\n   Output: file <name> opened, index=<index>\n"
+		<< "\ncl <index>\n   Output: file <name> closed\n"
+		<< "\nrd <index> <count>\n   Output: <count> bytes read: <xx...x>\n"
+		<< "\nwr <index> <char> <count>\n   Output: <count> bytes written\n"
+		<< "\nsk <index> <pos>\n   Output: current position is <pos>\n";
+	system("pause");
+	std::cout << "\ndr\n   Output: file0 <len0>,..., fileN <lenN>\n"
+		<< "\nin <disk_cont>\n   -disk_cont is a text file; it holds copy of ldisk"
+		<< "\n   -If file does not exist, output: disk initialized"
+		<< "\n   -If file does exist, output: disk restored\n"
+		<< "\nsv <disk_cont>\n   Output: disk saved\n"
+		<< "\nsd\n   Shuts down the system\n"
+		<< "\nhp\n   Displays this command list\n"
+		<< "\nIf any command fails, output: error\n\n";
+}
+
+
+
+
 void FileSystem53::restore() {
 	std::ifstream inFile("lDiskISO.txt");
 	char nextChar = ' ';
 
 	// For all blocks...
 	for (int i = 0; i < MAX_BLOCK_NO; i++)
-	{	
+	{
 		int arraySize = 0;		// Array size for block to be read.
-			
+
 		// Set arraySize to match for the block area (bytemap, FD's, data blocks).
 		if (i == 0)
 			arraySize = MAX_BLOCK_NO;
@@ -391,7 +531,7 @@ void FileSystem53::save() {
 	for (int i = 0; i < MAX_BLOCK_NO; i++)
 	{
 		int arraySize = 0;		// Array size for block to be read. 
-		
+
 		// Set arraySize to match for the block area (bytemap, FD's, data blocks).
 		if (i == 0)
 			arraySize = MAX_BLOCK_NO;

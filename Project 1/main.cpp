@@ -6,142 +6,138 @@
 // Description : Project 1, Part 1
 //================================================================================
 
-
 #include <iostream>
 #include <string>
+#include <vector>
+#include <sstream>
 #include "FileSystem53.h"
+
 using namespace std;
 
 
 
 int main() {
-	// CURRENT MAIN() CODE IS FOR TESTING PURPOSES ONLY
-	FileSystem53 testFS(0,0,"");
-	string cmd;
-	cin >> cmd;
-	while (cmd != "ex") // ex = exit?
-	{
-		if (cmd.size() == 2)
-		{
-			if (cmd == "cr")
-			{
-				string fname;
-				cin >> fname;
-				int result = testFS.create(fname);
-				if (result == 0)
-					cout << "file " << fname << " created" << endl;
-				else
-					cout << "error" << endl;
-			}
-			else if (cmd == "de")
-			{
-				string fname;
-				cin >> fname;
-				int result = testFS.deleteFile(fname);
-				if (result == 0)
-					cout << "file " << fname << " destroyed" << endl;
-				else
-					cout << "error" << endl;
-			}
-			else if (cmd == "op")
-			{
-				string fname;
-				cin >> fname;
-				int result = testFS.open(fname);
-				if (result != -1 || result != -2)
-					cout << "file " << fname << " opened, index = " << result << endl;
-				else
-					cout << "error" << endl;
-			}
-			else if (cmd == "cl")
-			{
-				int index;
-				cin >> index;
-				testFS.close(index);
-				cout << "file with index " << index << " closed" << endl;
-			}
-			else if (cmd == "rd")
-			{
-				int index, count;
-				cin >> index >> count;
-				char* ma = new char[count];
-				int result = testFS.read(index, ma, count);
-				if (result != -1 || result != -2)
-				{
-					cout << count << " bytes read: ";
-					for (int i = 0; i < count; i++)
-					{
-						std::cout << ma[i];
-					}
-				}
-				else
-					cout << "error";
-			}
-			else if (cmd == "wr")
-			{
-				int index, count;
-				char c;
-				cin >> index >> c >> count;
-				int result = testFS.write(index, c, count);
-				if (result != -1 || result != -2)
-					cout << count << " bytes written" << endl;
-				else
-					cout << "error" << endl;
-			}
-			else if (cmd == "sk")
-			{
-				int index, position;
-				cin >> index >> position;
-				int result = testFS.lseek(index, position);
-				if (result == 0)
-					cout << "current position is " << position << endl;
-				else
-					cout << "error" << endl;
-			}
-			else if (cmd == "dr")
-			{
-				testFS.directory();
-			}
-			else if (cmd == "in")
-			{
-				if (std::ifstream("lDiskISO.txt")) // file exists
-				{
-					testFS.restore();
-					cout << "disk restored" << endl;
-				}
-				else
-				{
-					FileSystem53 newFS(0, 0, "lDiskISO.txt");
-					cout << "disk initialized" << endl;
-				}
-			}
-			else if (cmd == "sv")
-			{
-				testFS.save();
-				cout << "disk saved" << endl;
-			}
-		}
-		else
-			cout << "error" << endl;
-		cin >> cmd;
-	}
+
+	FileSystem53 testFS(0, 0, "");
+
+	testFS.shellCommandList();
+
 	testFS.format();
-	
 	testFS.save();
 	testFS.restore();
 
-	//char** test = new char*[6];
-	//test[0] = new char[5];
+	string cmd = "porn";
+	while (cmd != "sd"){
 
-	//test[0][0] = (char)1;
+		int numberOfArgs = 0;
 
-	//cout << '<' << test[0][0] << '>' << endl;
-	char* h = new char[5];
-	testFS.read(0, h, 0);
+		std::string tempIn;
+		std::string buffer;
+		std::vector<std::string> userInput;			// user commands are ultimately stored here
 
-	// Holds the console open unil user input.
-	int i = 0;
-	cin >> i;
+		std::cout << "\nFS53> ";					// arbitrary command prompt
 
+		getline(cin, tempIn);
+		while (tempIn.size() == 0) {				// for empty input
+			std::cout << "\nFS53> ";
+			getline(cin, tempIn);
+		}
+
+
+		std::stringstream streamIn(tempIn);
+		while (streamIn >> buffer) {				// adds each element of the user's input, separated by spaces, to the vector
+			userInput.push_back(buffer);
+			++numberOfArgs;
+		}
+
+
+		if (userInput.at(0) == "cr") {
+			if (numberOfArgs != 2)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellCr(userInput.at(1));
+		}
+
+		else if (userInput.at(0) == "de") {
+			if (numberOfArgs != 2)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellDe(userInput.at(1));
+		}
+
+		else if (userInput.at(0) == "op") {
+			if (numberOfArgs != 2)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellOp(userInput.at(1));
+		}
+
+		else if (userInput.at(0) == "cl") {
+			if (numberOfArgs != 2)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellCl(userInput.at(1));
+		}
+
+		else if (userInput.at(0) == "rd") {
+			if (numberOfArgs != 3)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellRd(userInput.at(1), userInput.at(2));
+		}
+
+		else if (userInput.at(0) == "wr") {
+			if (numberOfArgs != 4)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellWr(userInput.at(1), userInput.at(2), userInput.at(3));
+		}
+
+		else if (userInput.at(0) == "sk") {
+			if (numberOfArgs != 3)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellSk(userInput.at(1), userInput.at(2));
+		}
+
+		else if (userInput.at(0) == "dr") {
+			if (numberOfArgs != 1)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellDr();
+		}
+
+		else if (userInput.at(0) == "in") {
+			if (numberOfArgs != 2)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellIn(userInput.at(1));
+		}
+
+		else if (userInput.at(0) == "sv") {
+			if (numberOfArgs != 1)
+				std::cout << "\nYou included the wrong number of arguments.\nPlease try again.";
+			else
+				testFS.shellSv();
+		}
+
+		else if (userInput.at(0) == "sd") {							// exits the terminal
+			cmd = "sd";
+			std::cout << "\nGood bye!\n";
+		}
+
+		else if (userInput.at(0) == "hp") {							// displays the list of commands available
+			testFS.shellCommandList();
+		}
+
+		else
+			std::cout << "\nNot a valid command, please type hp for help.";
+
+	}
+
+
+
+
+	system("pause");
 	return 0;
 }

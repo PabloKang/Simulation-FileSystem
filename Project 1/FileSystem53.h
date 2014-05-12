@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <map>
+
 using namespace std;
 
 
@@ -34,7 +35,7 @@ class FileSystem53 {
 	//	*	byteMap		- Each bit represent a block in a disk. MAX_BLOCK_NO/8 bytes
 	//	*	fDesc_0		- Root File Directory's descriptor.
 	//	*	fDesc_N		- N'th descriptor. Each descriptor is FILE_SIZE_FIELD + FILE_BLOCKS_MAX bytes long.
-	char** descTable;		
+	char** descTable;
 
 
 	// Stores data about a single, open file.
@@ -83,27 +84,27 @@ public:
 	//	-	(b) : Size of each block
 	//	-	(storage) : Name of text file to save/restore.
 	FileSystem53::FileSystem53(int l, int b, string storage);
-	
+
 
 	//	read_block() : Read data to pointer in main memory (p) from the hard disk location on lDisk at index (i).
 	void	FileSystem53::read_block(int i, char *p);
-	
+
 
 	//	write_block() : Write data from pointer in main memory (p) to the hard disk location on lDisk at index (i).
 	void	FileSystem53::write_block(int i, char *p);
-	
+
 
 	//	Constructor of Open File Table(OFT). 
 	void	FileSystem53::OpenFileTable();
-	
+
 
 	//	find_oft() : Finds empty spot in OFT and allocates a new open file.
 	int		FileSystem53::find_oft();
-	
+
 
 	//	deallocate_oft() : Removes an open file from OFT.
 	void	FileSystem53::deallocate_oft(int index);
-	
+
 
 	//	Format file system.
 	//	1. Initialize the first K blocks with zeros.
@@ -111,7 +112,7 @@ public:
 	//	Parameter(s):	none
 	//	Return:			none 
 	void	FileSystem53::format();
-	
+
 
 	//	Read descriptor
 	//	Parameter(s):
@@ -119,7 +120,7 @@ public:
 	//	Return:
 	//	-	Return char[4] of descriptor */
 	char*	FileSystem53::read_descriptor(int no);
-	
+
 
 	//	Clear descriptor
 	//	1. Clear descriptor entry
@@ -130,7 +131,7 @@ public:
 	//	Return:
 	//	-	none
 	void	FileSystem53::clear_descriptor(int no);
-	
+
 
 	//	Write descriptor
 	//	1. Update descriptor entry
@@ -142,13 +143,13 @@ public:
 	//	Return:
 	//	-	none
 	void	FileSystem53::write_descriptor(int no, char* desc);
-	
+
 
 	//	Search for an unoccupied descriptor.
 	//	If ARRAY[0] is zero, this descriptor is not occupied.
 	//	Then it returns descriptor number.
 	int		FileSystem53::find_empty_descriptor();
-	
+
 
 	/* Search for an unoccupied block.
 	*   This returns the first unoccupied block in bitmap field.
@@ -160,7 +161,7 @@ public:
 	*    -1 if not found
 	*/
 	int		FileSystem53::find_empty_block();
-	
+
 
 	/* Get one character.
 	*    Returns the character currently pointed by the internal file position
@@ -242,7 +243,7 @@ public:
 	*    index: index if open file table if successfully allocated.
 	*    Return -1 for error.
 	*/
-	int		FileSystem53::open_desc(int desc_no);	
+	int		FileSystem53::open_desc(int desc_no);
 
 
 	/* Open file with file name function:
@@ -352,6 +353,56 @@ public:
 	void	FileSystem53::directory();
 
 
+	//	The cr command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellCr(std::string name);
+
+	//	The de command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellDe(std::string name);
+
+	//	The op command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellOp(std::string name);
+
+	//	The cl command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellCl(std::string name);
+
+	//	The rd command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellRd(std::string name, std::string number);
+
+	//	The wr command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellWr(std::string name, std::string something2, std::string something3);
+
+	//	The sk command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellSk(std::string name, std::string pos);
+
+	//	The dr command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellDr();
+
+	//	The in command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellIn(std::string disk_cont);
+
+	//	The sv command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellSv();
+
+
+
+
+
+
+	//	Lists commands available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellCommandList();
+
+
 	/*------------------------------------------------------------------
 	Disk management functions.
 	These functions are not really a part of file system.
@@ -369,4 +420,3 @@ public:
 	// Disk dump, from block 'start' to 'start+size-1'.
 	void	FileSystem53::diskdump(int start, int size);
 };
-
