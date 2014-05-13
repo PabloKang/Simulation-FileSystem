@@ -12,10 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FileSystem53.cpp" />
-    <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="FileSystem53.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9846B1ED-9540-4BC6-AB56-A75C40A549C4}</ProjectGuid>
