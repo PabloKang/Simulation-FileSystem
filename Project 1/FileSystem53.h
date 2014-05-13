@@ -11,11 +11,118 @@
 #include <sstream>
 #include <string>
 #include <map>
+
 using namespace std;
 
-#define DEBUG		0	// Debug mode flag
-#define FLAG_EOF	-1	// End-of-File
-#define FLAG_EMPTY	-1	// Empty flag for array representation
+
+#define DEBUG		 0	// Debug mode flag
+#define FLAG_ERROR	-1	// Empty flag for array representation
+#define FLAG_SUCCESS 1
+
+
+// FILESYSTEM53 FORMATTING PARAMETERS:
+extern int MAX_BLOCK_NO;					// Maximum number of blocks which can be supported by this file system.
+extern int MAX_BLOCK_NO_DIV8;		// Maximum nmber of blocks in the file system, divided by 8.
+extern int FILE_SIZE_FIELD;					// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
+extern int FILE_BLOCKS_MAX;					// The maximum amount of blocks a file can be separated into.
+extern int FILE_DESCR_SIZE;
+extern int MAX_FILE_NO;					// Maximum number of files which can be stored by this file system.
+extern int MAX_FILE_NAME_LEN;					// Maximum size of file name in byte.
+extern int MAX_OPEN_FILES;					// Maximum number of files to open at the same time.
+extern int FILEIO_BUFFER_SIZE;					// Size of file IO buffer.
+extern int B;					// Size (in bytes) of each block.
+extern int K;					// Number of blocks for desc_table
+extern int F;					// Number of File Descriptors per block.
+
+
+// Stores data about a single file descriptor.
+//	*	bool	inUse		- Warns if index is in use
+//	*	int		size		- Size of file
+//	*	int*	blks		- Blocks used by file
+struct FileDescriptor {
+	bool	inUse;			// Warns if OF index is in use.
+	int		size;			// File size.
+	int*	blks;			// Blocks used by file.
+
+	FileDescriptor() 
+	{
+		inUse = false;
+	}
+	void Open(int initSize, int initBlk)
+	{
+		inUse = true;
+		size = initSize;
+		blks = new int[FILE_BLOCKS_MAX];
+		blks[0] = initBlk;
+	}
+	void Close()
+	{
+		inUse = false;
+		size = FLAG_ERROR;
+		delete[] blks;
+	}
+};
+
+
+// Stores data about a single, open file.
+//	*	bool	inUse		- Warns if OF index is in use
+//	*	char*	buffer		- Read/Write buffer of file
+//	*	int		pos			- Current block index of read/write position in file
+//	*	int		desc		- File Descriptor index
+struct OpenFile {
+	bool	inUse;			// Warns if OF index is in use
+	char*	buffer;			// Read/Write buffer of file
+	int		desc;			// File Descriptor index
+	int		cpos;			// Current index of read/write position in file
+	int		cblk;			// Current block of the read/write positio in file
+	int		size;			// Size of file
+
+	OpenFile() 
+	{
+		inUse = false;
+	}
+	void Open(int index, int blk, int fSize)
+	{
+		inUse = true;
+		buffer = new char[B];
+		desc = index;
+		cpos = 0;
+		cblk = blk;
+		size = fSize;
+	}
+	void Close()
+	{
+		inUse = false;
+		delete[] buffer;
+		desc = FLAG_ERROR;
+		cpos = FLAG_ERROR;
+		cblk = FLAG_ERROR;
+		size = FLAG_ERROR;
+	}
+}; // END STRUCT
+
+struct Directory{
+	bool	inUse;			// Warns if index is in use
+	string	fileName;		// Symbolic name of file
+	int		desc;			// File Descriptor index
+	
+	Directory()
+	{
+		inUse = false;
+	}
+	void Open(string name, int index)
+	{
+		inUse = true;
+		fileName = name;
+		desc = index;
+	}
+	void Close()
+	{
+		inUse = false;
+		fileName = "";
+		desc = FLAG_ERROR;
+	}
+};
 
 
 class FileSystem53 {
@@ -30,65 +137,17 @@ class FileSystem53 {
 	//	*	fData_L		- Last data storage block, where L is MAX_BLOCK_NO - 1.
 	char** lDisk;
 
-	//	This is a cache of the file descriptor portion of ldisk. It's contents should be maintained to be same as first K blocks in disk.
-	//	Descriptor table format: 
-	//	desc_table { byteMap[], fDesc_0[], fDesc_1[], ... , fDesc_N[] }
-	//	*	byteMap		- Each bit represent a block in a disk. MAX_BLOCK_NO/8 bytes
-	//	*	fDesc_0		- Root File Directory's descriptor.
-	//	*	fDesc_N		- N'th descriptor. Each descriptor is FILE_SIZE_FIELD + FILE_BLOCKS_MAX bytes long.
-	char** descTable;		
 
+	char* byteMap;						// Cache of byte map
 
-	// Stores data about a single, open file.
-	//	*	bool	inUse		- Warns if OF index is in use
-	//	*	char*	buffer		- Read/Write buffer of file
-	//	*	int		pos			- Current block index of read/write position in file
-	//	*	int		desc		- File Descriptor index
-	struct OpenFile {
-		bool	inUse;			// Warns if OF index is in use
-		char*	buffer;			// Read/Write buffer of file
-		int		desc;			// File Descriptor index
-		int		cpos;			// Current index of read/write position in file
-		int		cblk;			// Current block of the read/write positio in file
-		int		size;			// Size of file
-		
-		void Open(int index)
-		{
-			inUse = true;
-			desc = index;
-			cpos = 0;
-		}
-		void Close()
-		{
-			inUse = false;
-			desc = FLAG_EMPTY;
-			cpos = FLAG_EMPTY;
-			cblk = FLAG_EMPTY;
-			size = FLAG_EMPTY;
-		}
-	}; // END STRUCT
+	FileDescriptor** descTable;			// Cache of file descriptors
 
+	OpenFile* oft;						// Open File Table - Stores info of up to 3 open files.
 
-	OpenFile* oft;	// Open File Table - Stores info of up to 3 open files.
-
-	map<string, int>  dirFileMap;					// Directory File Map - <File Name, File Descriptor Index>
+	Directory*  dirFile;		// Directory File Map - <File Name, File Descriptor Index>
 
 
 public:
-
-	// FILESYSTEM53 FORMATTING PARAMETERS:
-	int MAX_BLOCK_NO = 64;					// Maximum number of blocks which can be supported by this file system.
-	int MAX_BLOCK_NO_DIV8 = MAX_BLOCK_NO / 8;		// Maximum nmber of blocks in the file system, divided by 8.
-	int FILE_SIZE_FIELD = 1;					// Size of file size field in bytes. Maximum file size allowed in this file system is 192.
-	int FILE_BLOCKS_MAX = 3;					// The maximum amount of blocks a file can be separated into.
-	int FILE_DESCR_SIZE = FILE_SIZE_FIELD + FILE_BLOCKS_MAX;
-	int MAX_FILE_NO = 14;					// Maximum number of files which can be stored by this file system.
-	int MAX_FILE_NAME_LEN = 32;					// Maximum size of file name in byte.
-	int MAX_OPEN_FILES = 3;					// Maximum number of files to open at the same time.
-	int FILEIO_BUFFER_SIZE = 64;					// Size of file IO buffer.
-	int B = 64;					// Size (in bytes) of each block.
-	int K = 7;					// Number of blocks for desc_table
-	int F = 4;					// Number of File Descriptors per block.
 
 
 	//	Constructor of file system.
@@ -138,7 +197,7 @@ public:
 	//	-	no: Descriptor number to read
 	//	Return:
 	//	-	Return char[4] of descriptor */
-	char*	FileSystem53::read_descriptor(int no);
+	FileDescriptor	FileSystem53::read_descriptor(int no);
 	
 
 	//	Clear descriptor
@@ -161,7 +220,7 @@ public:
 	//	-	desc: descriptor to write
 	//	Return:
 	//	-	none
-	void	FileSystem53::write_descriptor(int no, char* desc);
+	void	FileSystem53::write_descriptor(int no, FileDescriptor fd);
 	
 
 	void	FileSystem53::update_desc_size(int descNum, int value);
@@ -384,6 +443,52 @@ public:
 	void	FileSystem53::directory();
 
 
+	//	The cr command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellCr(std::string name);
+
+	//	The de command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellDe(std::string name);
+
+	//	The op command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellOp(std::string name);
+
+	//	The cl command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellCl(std::string name);
+
+	//	The rd command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellRd(std::string name, std::string number);
+
+	//	The wr command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellWr(std::string name, std::string something2, std::string something3);
+
+	//	The sk command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellSk(std::string name, std::string pos);
+
+	//	The dr command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellDr();
+
+	//	The in command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellIn(std::string disk_cont);
+
+	//	The sv command available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellSv();
+
+
+	//	Lists commands available to the user in terminal
+	//	For use with the shell
+	void FileSystem53::shellCommandList();
+
+
 	/*------------------------------------------------------------------
 	Disk management functions.
 	These functions are not really a part of file system.
@@ -404,15 +509,16 @@ public:
 
 	string	FileSystem53::toString();
 
-
-	template <typename T>
-	void	FileSystem53::numberToCharArray(const T& Number, char* cstring);
-
-
-	void	FileSystem53::numberToCharArray(int& number, char* cstring, int size);
-
-
-	template <typename T>
-	T		FileSystem53::charArrayToNumber(const string& Text);
 };
 
+
+// OTHER FUNCTIONS
+template <typename T>
+void	numberToCharArray(const T& Number, char* cstring);
+
+
+void	numberToCharArray(int& number, char* cstring, int size);
+
+
+template <typename T>
+T		charArrayToNumber(const string& Text);
