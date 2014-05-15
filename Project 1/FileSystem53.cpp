@@ -141,7 +141,7 @@ class FileSystem53 {
 
 	OpenFile* oft;						// Open File Table - Stores info of up to 3 open files.
 
-	Directory*  dirFile;		// Directory File Map - <File Name, File Descriptor Index>
+	Directory*  dirFile;				// Directory File Map - <File Name, File Descriptor Index>
 
 
 public:
@@ -466,8 +466,8 @@ public:
 
 			write_block(get_desc_block_value(oft[index].desc, oft[index].cblk++), oft[index].buffer);
 
-			int nextBlock = get_desc_block_value(oft[index].desc, ++oft[index].cblk);
-			if (nextBlock == NULL) {
+			int nextBlock = get_desc_block_value(oft[index].desc, oft[index].cblk);
+			if (nextBlock != NULL) {
 				nextBlock = find_empty_block();
 				update_desc_block(oft[index].desc, oft[index].cblk, nextBlock);
 				byteMap[nextBlock] = (char)1; // Update bitmap
@@ -555,11 +555,9 @@ public:
 
 	void FileSystem53::shellCr(std::string name){
 
-		string fname = name;
-		cin >> fname;
-		int result = create(fname);
+		int result = create(name);
 		if (result == 0)
-			cout << "file " << fname << " created" << endl;
+			cout << "file " << name << " created" << endl;
 		else
 			cout << "error" << endl;
 	}
@@ -708,7 +706,7 @@ public:
 			// For the size of the current block...
 			for (int j = 0; j < arraySize; j++)
 			{
-				cin >> nextChar;
+				inFile >> nextChar;
 
 				// If there is a character left in the file line, copy it to 'p'.
 				if (inFile && nextChar != '\n') {
