@@ -633,6 +633,7 @@ public:
 		{
 			int arraySize = 0;		// Array size for block to be read.
 
+
 			// Set arraySize to match for the block area (bytemap, FD's, data blocks).
 			if (i == 0)
 				arraySize = MAX_BLOCK_NO;
